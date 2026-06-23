@@ -102,7 +102,7 @@ exports.handler = async (event) => {
   const lineItems = variants.map(id => ({
     variant_id: id,
     quantity: 1,
-    applied_discount: { value_type: 'percentage', value: '100', title: 'Sample' },
+
   }));
 
   try {
