@@ -24,13 +24,15 @@ exports.handler = async (event) => {
   };
 
   const BUNDLE_PREFIXES = {
-    coating: 'MMCPlaq',
-    lime:    'MMLWSamp',
+    coating: ['MMCPlaq'],
+    lime:    ['MMLWSamp'],
+    both:    ['MMCPlaq', 'MMLWSamp'],
   };
 
   const BUNDLE_NAMES = {
     coating: 'INTERNAL — Coating Samples Bundle',
     lime:    'INTERNAL — Lime Wash Samples Bundle',
+    both:    'INTERNAL — Coating & Lime Wash Samples Bundle',
   };
 
   const handle = STORES[store];
@@ -56,8 +58,8 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: `Token error: ${err.message}` }) };
   }
 
-  const prefix = BUNDLE_PREFIXES[bundleType];
-  if (!prefix) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Unknown bundle type' }) };
+  const prefixes = BUNDLE_PREFIXES[bundleType];
+  if (!prefixes) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Unknown bundle type' }) };
 
   // Step 2 — fetch active products only, deduplicated by SKU
   let variants = [];
@@ -79,7 +81,8 @@ exports.handler = async (event) => {
 
       for (const product of data.products) {
         for (const variant of product.variants) {
-          if (variant.sku && variant.sku.startsWith(prefix) && !seenSkus.has(variant.sku)) {
+          const matchesPrefix = prefixes.some(p => variant.sku && variant.sku.startsWith(p));
+          if (matchesPrefix && !seenSkus.has(variant.sku)) {
             seenSkus.add(variant.sku);
             variants.push(variant.id);
           }
@@ -95,7 +98,7 @@ exports.handler = async (event) => {
   }
 
   if (variants.length === 0) {
-    return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: `No active SKUs found starting with ${prefix}` }) };
+    return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: `No active SKUs found` }) };
   }
 
   // Step 3 — create draft order at original prices, no discounts
