@@ -68,7 +68,7 @@ exports.handler = async (event) => {
   try {
     while (isFirst || pageInfo) {
       isFirst = false;
-      let path = `/products.json?limit=250&fields=id,variants`;
+      let path = `/products.json?limit=250&status=active&fields=id,status,variants`;
       if (pageInfo) path += `&page_info=${pageInfo}`;
 
       const r = await fetch(`https://${domain}/admin/api/2024-01${path}`, {
