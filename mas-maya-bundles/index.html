@@ -42,7 +42,7 @@
     .subtitle { margin-top: 10px; font-size: 13px; font-weight: 300; color: var(--mid); letter-spacing: 0.04em; }
     .divider { width: 40px; height: 1px; background: var(--border); margin: 24px auto 0; }
 
-    .store-section { width: 100%; max-width: 520px; margin-bottom: 40px; }
+    .store-section { width: 100%; max-width: 600px; margin-bottom: 40px; }
     .store-section label {
       display: block; font-size: 11px; font-weight: 300;
       letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid); margin-bottom: 10px;
@@ -58,16 +58,17 @@
     .store-btn.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 
     .bundles {
-      width: 100%; max-width: 520px;
-      display: grid; grid-template-columns: 1fr 1fr;
+      width: 100%; max-width: 600px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
       gap: 16px; margin-bottom: 32px;
     }
     .bundle-card {
       border: 1px solid var(--border); background: var(--white);
       padding: 28px 24px 24px; display: flex; flex-direction: column; gap: 16px;
     }
+    .bundle-card.featured { border-color: var(--ink); }
     .bundle-label { font-size: 10px; font-weight: 300; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mid); }
-    .bundle-name { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 22px; color: var(--ink); line-height: 1.2; }
+    .bundle-name { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 20px; color: var(--ink); line-height: 1.2; }
     .bundle-count { font-size: 12px; font-weight: 300; color: var(--mid); }
     .create-btn {
       border: 1px solid var(--ink); background: var(--ink); color: var(--cream);
@@ -78,7 +79,7 @@
     .create-btn:hover:not(:disabled) { background: var(--cream); color: var(--ink); }
     .create-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    .log-wrap { width: 100%; max-width: 520px; }
+    .log-wrap { width: 100%; max-width: 600px; }
     #log { border: 1px solid var(--border); background: var(--white); padding: 16px; font-size: 12px; font-weight: 300; line-height: 1.9; color: var(--ink); display: none; }
     #log.visible { display: block; }
     .log-entry { display: flex; align-items: baseline; gap: 8px; }
@@ -87,7 +88,7 @@
     .log-entry.err { color: var(--error); }
     .log-entry a { color: var(--ink); }
 
-    @media (max-width: 480px) {
+    @media (max-width: 600px) {
       .bundles { grid-template-columns: 1fr; }
       h1 { font-size: 28px; }
     }
@@ -127,6 +128,14 @@
     <div class="bundle-count">All MMLWSamp SKUs · 1 unit each</div>
     <button class="create-btn" id="btnLime" onclick="createBundle('lime')">Create Draft Order</button>
   </div>
+  <div class="bundle-card featured">
+    <div>
+      <div class="bundle-label">Bundle 3</div>
+      <div class="bundle-name">Coating &amp;<br>Lime Wash</div>
+    </div>
+    <div class="bundle-count">All sample SKUs · 1 unit each</div>
+    <button class="create-btn" id="btnBoth" onclick="createBundle('both')">Create Draft Order</button>
+  </div>
 </div>
 
 <div class="log-wrap">
@@ -163,17 +172,17 @@
 
   async function createBundle(type) {
     if (!selectedStore) { alert('Please select COM or UK first.'); return; }
-    const btnId = type === 'coating' ? 'btnCoating' : 'btnLime';
-    const btn = document.getElementById(btnId);
+    const btnMap = { coating: 'btnCoating', lime: 'btnLime', both: 'btnBoth' };
+    const btn = document.getElementById(btnMap[type]);
     btn.disabled = true;
     btn.textContent = 'Working…';
-    const label = type === 'coating' ? 'Coating' : 'Lime Wash';
-    log('Creating ' + label + ' bundle for ' + selectedStore.toUpperCase() + '…');
+    const labelMap = { coating: 'Coating', lime: 'Lime Wash', both: 'Coating & Lime Wash' };
+    log('Creating ' + labelMap[type] + ' bundle for ' + selectedStore.toUpperCase() + '…');
     try {
       const res = await fetch('/.netlify/functions/shopify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ store: selectedStore, action: 'createBundle', bundleType: type }),
+        body: JSON.stringify({ store: selectedStore, bundleType: type }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
