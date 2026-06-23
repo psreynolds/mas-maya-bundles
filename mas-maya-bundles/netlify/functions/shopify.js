@@ -16,7 +16,7 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Invalid JSON' }) }; }
 
-  const { store, action, bundleType } = body;
+  const { store, bundleType } = body;
 
   const STORES = {
     com: '471f39',
@@ -59,7 +59,7 @@ exports.handler = async (event) => {
   const prefix = BUNDLE_PREFIXES[bundleType];
   if (!prefix) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Unknown bundle type' }) };
 
-  // Step 2 — fetch all variants matching prefix (deduplicated)
+  // Step 2 — fetch active products only, deduplicated by SKU
   let variants = [];
   let seenSkus = new Set();
   let pageInfo = null;
@@ -68,7 +68,7 @@ exports.handler = async (event) => {
   try {
     while (isFirst || pageInfo) {
       isFirst = false;
-      let path = `/products.json?limit=250&status=active&fields=id,status,variants`;
+      let path = `/products.json?limit=250&status=active&fields=id,variants`;
       if (pageInfo) path += `&page_info=${pageInfo}`;
 
       const r = await fetch(`https://${domain}/admin/api/2024-01${path}`, {
@@ -95,14 +95,13 @@ exports.handler = async (event) => {
   }
 
   if (variants.length === 0) {
-    return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: `No SKUs found starting with ${prefix}` }) };
+    return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: `No active SKUs found starting with ${prefix}` }) };
   }
 
-  // Step 3 — create draft order
+  // Step 3 — create draft order at original prices, no discounts
   const lineItems = variants.map(id => ({
     variant_id: id,
     quantity: 1,
-
   }));
 
   try {
